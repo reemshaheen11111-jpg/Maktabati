@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مكتبتي - Maktabati</title>
+    <!-- خط عربي أنيق (Cairo) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- الهيدر الرئيسي -->
+        <header class="main-header">
+            <div class="logo-area">
+                <span class="logo-icon">📚</span>
+                <h1>مكـتـبـتـي</h1>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" id="open-modal-btn">+ إضافة كتاب جديد</button>
+                <button class="btn btn-secondary" onclick="exportBackup()">تصدير نسخة</button>
+                <label for="import-file" class="btn btn-outline">
+                    استيراد
+                    <input type="file" id="import-file" accept=".json" onchange="importBackup(event)" hidden>
+                </label>
+            </div>
+        </header>
+
+        <!-- لوحة العدادات الشاملة (Interactive Dashboard Cards) -->
+        <section class="dashboard">
+            <div class="metric-card card-all active-filter" onclick="filterByStatus('All', this)">
+                <div class="card-info">
+                    <span class="card-title">كل الكتب</span>
+                    <span class="card-value" id="all-count">0</span>
+                </div>
+                <div class="card-icon">📚</div>
+            </div>
+
+            <div class="metric-card card-physical" onclick="filterByStatus('PhysicalOwned', this)">
+                <div class="card-info">
+                    <span class="card-title">ورقي مملوك</span>
+                    <span class="card-value" id="physical-count">0</span>
+                </div>
+                <div class="card-icon">📖</div>
+            </div>
+
+            <div class="metric-card card-unread" onclick="filterByStatus('Unread', this)">
+                <div class="card-info">
+                    <span class="card-title">غير مقروء</span>
+                    <span class="card-value" id="unread-count">0</span>
+                </div>
+                <div class="card-icon">⏳</div>
+            </div>
+
+            <div class="metric-card card-reading" onclick="filterByStatus('Currently Reading', this)">
+                <div class="card-info">
+                    <span class="card-title">أقرأه حالياً</span>
+                    <span class="card-value" id="reading-count">0</span>
+                </div>
+                <div class="card-icon">📖</div>
+            </div>
+
+            <div class="metric-card card-read" onclick="filterByStatus('Read', this)">
+                <div class="card-info">
+                    <span class="card-title">تمت قراءته</span>
+                    <span class="card-value" id="read-count">0</span>
+                </div>
+                <div class="card-icon">✅</div>
+            </div>
+
+            <div class="metric-card card-archived" onclick="filterByStatus('Archived', this)">
+                <div class="card-info">
+                    <span class="card-title">مؤرشف</span>
+                    <span class="card-value" id="archived-count">0</span>
+                </div>
+                <div class="card-icon">📦</div>
+            </div>
+
+            <div class="metric-card card-wishlist" onclick="filterByStatus('Wishlist', this)">
+                <div class="card-info">
+                    <span class="card-title">قائمة الأمنيات</span>
+                    <span class="card-value" id="wishlist-count">0</span>
+                </div>
+                <div class="card-icon">✨</div>
+            </div>
+        </section>
+
+        <!-- شريط البحث الفوري -->
+        <section class="search-section">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="search-input" placeholder="ابحث باسم الكتاب أو اسم المؤلف...">
+            </div>
+        </section>
+
+        <!-- منطقة عرض الكتب (List View) -->
+        <section class="books-section">
+            <h2 class="section-title">قائمة الكتب</h2>
+            <div id="books-container" class="books-list">
+                <!-- يتم توليد البطاقات هنا ديناميكياً عن طريق JavaScript -->
+            </div>
+        </section>
+    </div>
+
+    <!-- النافذة المنبثقة لإضافة/تعديل كتاب (Modal) -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>إضافة كتاب جديد</h3>
+                <button class="close-btn" id="close-modal-btn">&times;</button>
+            </div>
+            <form id="add-book-form">
+                <!-- حقل مخفي للتعديل -->
+                <input type="hidden" id="editing-book-id">
+
+                <div class="form-group">
+                    <label>عنوان الكتاب *</label>
+                    <input type="text" id="book-title" required placeholder="مثال: مقدمة في خوارزميات الحاسوب">
+                </div>
+                <div class="form-group">
+                    <label>اسم المؤلف *</label>
+                    <input type="text" id="book-author" required placeholder="مثال: د. أحمد محمود">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>نوع الصيغة</label>
+                        <select id="book-format">
+                            <option value="Physical">ورقي (Physical)</option>
+                            <option value="PDF">إلكتروني (PDF)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>حالة القراءة</label>
+                        <select id="book-status">
+                            <option value="Unread">غير مقروء</option>
+                            <option value="Currently Reading">أقرأه حالياً</option>
+                            <option value="Read">تمت قراءته</option>
+                            <option value="Wishlist">في قائمة الأمنيات</option>
+                            <option value="Archived">مؤرشف</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>التقييم الشخصي</label>
+                    <select id="book-rating">
+                        <option value="Unrated">بدون تقييم</option>
+                        <option value="Liked">أعجبني 👍</option>
+                        <option value="Disliked">لم يعجبني 👎</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>ملاحظات شخصية</label>
+                    <textarea id="book-notes" rows="3" placeholder="أضف أي اقتباسات أو ملاحظات حول الكتاب..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary btn-full" id="modal-submit-btn">حفظ الكتاب في المكتبة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ترتيب الاستدعاء الصحيح للـ JavaScript -->
+    <script src="js/db.js"></script>
+    <script src="js/backup.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
